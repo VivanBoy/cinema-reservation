@@ -1,4 +1,4 @@
-# 🎬Cinéma – Réservation
+# 🎬 Cinéma – Réservation
 
 Application web complète de **réservation de billets de cinéma** développée dans le cadre du cours  
 *Introduction à la programmation de serveurs Web (Node.js / Express / MySQL / EJS)*.
@@ -9,7 +9,6 @@ Application web complète de **réservation de billets de cinéma** développée
 - Séparation **API REST** (`/api/...`) et **pages EJS** (`/films-ejs`, `/reservations-ejs`, etc.)
 
 ---
-
 ## Structure du projet
 
 ```text
