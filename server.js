@@ -24,19 +24,19 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// ================== MIDDLEWARES ==================
+// MIDDLEWARES
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// ================== EJS ==================
+//  EJS 
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
 // Fichiers statiques (frontend : index.html, css, js, img, etc.)
 app.use(express.static(path.join(__dirname, "frontend")));
 
-// ================== PAGES HTML / EJS ==================
+// PAGES HTML / EJS 
 
 // Page d'accueil → on envoie la page de login (frontend/index.html)
 app.get("/", (req, res) => {
@@ -162,7 +162,7 @@ app.get("/reservations-ejs", async (req, res) => {
   }
 });
 
-// ============ PAGES ADMIN EJS (AJOUT FILM + SEANCE) ============
+// PAGES ADMIN EJS (AJOUT FILM + SEANCE)
 
 app.get("/admin/movies/new", (req, res) => {
   res.render("admin-new-movie", {
@@ -254,7 +254,7 @@ app.post("/admin/showtimes", async (req, res) => {
   }
 });
 
-// ================== API JSON ==================
+// API JSON 
 
 app.get("/api", (req, res) => {
   res.json({ message: "Cinema reservation API is running..." });
@@ -266,7 +266,7 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/showtimes", showtimeRoutes);
 app.use("/api/bookings", bookingRoutes);
 
-// ================== LANCEMENT SERVEUR ==================
+// LANCEMENT SERVEU
 
 connectDB();
 
