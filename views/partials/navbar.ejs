@@ -1,0 +1,159 @@
+<nav class="navbar navbar-expand-lg navbar-dark bg-dark shadow-sm">
+  <div class="container-fluid">
+    <a class="navbar-brand fw-semibold" href="/films-ejs">
+      🎬 Cinéma – Réservation
+    </a>
+
+    <button
+      class="navbar-toggler"
+      type="button"
+      data-bs-toggle="collapse"
+      data-bs-target="#mainNavbar"
+    >
+      <span class="navbar-toggler-icon"></span>
+    </button>
+
+    <div class="collapse navbar-collapse" id="mainNavbar">
+      <ul class="navbar-nav me-auto mb-2 mb-lg-0">
+        <li class="nav-item">
+          <a class="nav-link" href="/films-ejs">Films</a>
+        </li>
+
+        <li class="nav-item">
+          <a class="nav-link" id="reservationsLink" href="#">
+            Mes réservations
+          </a>
+        </li>
+
+        <!-- Menu Admin (caché si pas admin) -->
+        <li class="nav-item dropdown" id="adminMenu">
+          <a
+            class="nav-link dropdown-toggle"
+            href="#"
+            role="button"
+            data-bs-toggle="dropdown"
+          >
+            Admin
+          </a>
+          <ul class="dropdown-menu">
+            <li>
+              <a class="dropdown-item" href="/admin/movies/new">
+                Ajouter un film
+              </a>
+            </li>
+            <li>
+              <a class="dropdown-item" href="/admin/showtimes/new">
+                Ajouter une séance
+              </a>
+            </li>
+          </ul>
+        </li>
+      </ul>
+
+      <div class="d-flex align-items-center gap-2">
+        <span id="navbarUser" class="navbar-text text-white small"></span>
+        <button
+          type="button"
+          class="btn btn-outline-light btn-sm"
+          onclick="logout()"
+        >
+          Se déconnecter
+        </button>
+      </div>
+    </div>
+  </div>
+</nav>
+
+<script>
+  // --------- Lecture robuste de l'utilisateur stocké ---------
+  function getStoredUser() {
+    // Nouveau format : "cinemaUser" en JSON
+    try {
+      const raw = localStorage.getItem("cinemaUser");
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (obj && (obj.username || obj.id || obj.userId)) {
+          return obj;
+        }
+      }
+    } catch (e) {
+      console.warn("Impossible de parser cinemaUser :", e);
+    }
+
+    // Ancien format : username / userId / token séparés
+    const backupUsername = localStorage.getItem("username");
+    const backupId = localStorage.getItem("userId");
+    const backupToken = localStorage.getItem("token");
+
+    if (backupUsername || backupId || backupToken) {
+      return {
+        username: backupUsername || null,
+        id: backupId ? parseInt(backupId, 10) : null,
+        roles: [],
+        token: backupToken || null,
+      };
+    }
+
+    return null;
+  }
+
+  function updateNavbarFromUser() {
+    const spanUser = document.getElementById("navbarUser");
+    const adminMenu = document.getElementById("adminMenu");
+    const user = getStoredUser();
+
+    if (!user) {
+      if (spanUser) spanUser.textContent = "";
+      if (adminMenu) adminMenu.classList.add("d-none");
+      return;
+    }
+
+    if (spanUser && user.username) {
+      spanUser.textContent = "Connecté : " + user.username;
+    }
+
+    const roles = user.roles || [];
+    const isAdmin =
+      roles.includes("admin") ||
+      roles.includes("ROLE_ADMIN") ||
+      user.username === "ino1"; // au cas où
+
+    if (adminMenu) {
+      if (isAdmin) adminMenu.classList.remove("d-none");
+      else adminMenu.classList.add("d-none");
+    }
+  }
+
+  function setupReservationsLink() {
+    const link = document.getElementById("reservationsLink");
+    if (!link) return;
+
+    link.addEventListener("click", function (e) {
+      e.preventDefault();
+      const user = getStoredUser();
+
+      if (!user || !user.username) {
+        alert("Veuillez vous connecter pour voir vos réservations.");
+        window.location.href = "/";
+        return;
+      }
+
+      const username = user.username;
+      window.location.href =
+        "/reservations-ejs?username=" + encodeURIComponent(username);
+    });
+  }
+
+  function logout() {
+    localStorage.removeItem("cinemaUser");
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("userId");
+    window.location.href = "/";
+  }
+
+  document.addEventListener("DOMContentLoaded", function () {
+    updateNavbarFromUser();
+    setupReservationsLink();
+  });
+</script> 

@@ -72,7 +72,7 @@ if (loginForm) {
       });
 
       setToken(data.token);
-      loginMessage.textContent = "Connexion réussie ✅";
+      loginMessage.textContent = "Connexion réussie ";
       loginMessage.classList.remove("text-danger");
       loginMessage.classList.add("text-success");
 

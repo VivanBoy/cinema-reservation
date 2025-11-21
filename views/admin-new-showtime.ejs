@@ -1,0 +1,42 @@
+<%- include("partials/header", { title: "Admin - Ajouter une séance" }) %>
+
+<h1 class="mb-4">Ajouter une séance (Admin)</h1>
+
+<form action="/admin/showtimes" method="POST" class="row g-3">
+  <div class="col-md-6">
+    <label class="form-label">Film</label>
+    <select name="movie_id" class="form-select" required>
+      <option value="">-- Choisir un film --</option>
+      <% movies.forEach(function(mv) { %>
+        <option value="<%= mv.id %>"><%= mv.title %></option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Salle</label>
+    <select name="room_id" class="form-select" required>
+      <option value="">-- Choisir une salle --</option>
+      <% rooms.forEach(function(rm) { %>
+        <option value="<%= rm.id %>"><%= rm.name %> (capacité : <%= rm.capacity %>)</option>
+      <% }) %>
+    </select>
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Date et heure</label>
+    <input type="datetime-local" name="start_time" class="form-control" required />
+  </div>
+
+  <div class="col-md-6">
+    <label class="form-label">Prix ($)</label>
+    <input type="number" step="0.01" name="price" class="form-control" required />
+  </div>
+
+  <div class="col-12">
+    <button type="submit" class="btn btn-success">Ajouter la séance</button>
+    <a href="/films-ejs" class="btn btn-secondary ms-2">Annuler</a>
+  </div>
+</form>
+
+<%- include("partials/footer") %>
