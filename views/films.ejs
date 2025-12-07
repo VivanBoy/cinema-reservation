@@ -13,7 +13,11 @@
   </head>
   <body class="bg-light">
     <!-- NAVBAR (partielle) -->
+<<<<<<< HEAD
     <%- include('partials/navbar') %>
+=======
+    <%- include("partials/navbar", { activePage: "films" }) %>
+>>>>>>> aedfb4c (Travail sur le backend cinéma)
 
     <!-- CONTENU -->
     <main class="container py-5">
@@ -55,9 +59,48 @@
         </div>
         <% }) %>
       </div>
+<<<<<<< HEAD
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
     
   </body>
 </html>
+=======
+
+      <!-- PAGINATION -->
+      <% if (typeof totalPages !== "undefined" && totalPages > 1) { %>
+      <nav aria-label="Pagination films" class="mt-4">
+        <ul class="pagination">
+          <% if (page > 1) { %>
+            <li class="page-item">
+              <a class="page-link" href="/films-ejs?page=<%= page - 1 %>">
+                Précédent
+              </a>
+            </li>
+          <% } %>
+
+          <% for (let p = 1; p <= totalPages; p++) { %>
+            <li class="page-item <%= p === page ? 'active' : '' %>">
+              <a class="page-link" href="/films-ejs?page=<%= p %>">
+                <%= p %>
+              </a>
+            </li>
+          <% } %>
+
+          <% if (page < totalPages) { %>
+            <li class="page-item">
+              <a class="page-link" href="/films-ejs?page=<%= page + 1 %>">
+                Suivant
+              </a>
+            </li>
+          <% } %>
+        </ul>
+      </nav>
+      <% } %>
+    </main>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+  </body>
+</html>
+>>>>>>> aedfb4c (Travail sur le backend cinéma)

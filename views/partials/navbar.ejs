@@ -16,16 +16,37 @@
     <div class="collapse navbar-collapse" id="mainNavbar">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
+<<<<<<< HEAD
           <a class="nav-link" href="/films-ejs">Films</a>
         </li>
 
         <li class="nav-item">
           <a class="nav-link" id="reservationsLink" href="#">
+=======
+          <a
+            class="nav-link <%= activePage === 'films' ? 'active' : '' %>"
+            href="/films-ejs"
+          >
+            Films
+          </a>
+        </li>
+
+        <li class="nav-item">
+          <a
+            id="reservationsLink"
+            class="nav-link <%= activePage === 'reservations' ? 'active' : '' %>"
+            href="/reservations-ejs"
+          >
+>>>>>>> aedfb4c (Travail sur le backend cinéma)
             Mes réservations
           </a>
         </li>
 
+<<<<<<< HEAD
         <!-- Menu Admin (caché si pas admin) -->
+=======
+        <!-- Menu Admin -->
+>>>>>>> aedfb4c (Travail sur le backend cinéma)
         <li class="nav-item dropdown" id="adminMenu">
           <a
             class="nav-link dropdown-toggle"
@@ -65,6 +86,7 @@
 </nav>
 
 <script>
+<<<<<<< HEAD
   // --------- Lecture robuste de l'utilisateur stocké ---------
   function getStoredUser() {
     // Nouveau format : "cinemaUser" en JSON
@@ -157,3 +179,55 @@
     setupReservationsLink();
   });
 </script> 
+=======
+  (function () {
+    function getStoredUser() {
+      try {
+        return JSON.parse(localStorage.getItem("cinemaUser"));
+      } catch (e) {
+        return null;
+      }
+    }
+
+    const user = getStoredUser();
+    const spanUser = document.getElementById("navbarUser");
+    const reservationsLink = document.getElementById("reservationsLink");
+    const adminMenu = document.getElementById("adminMenu");
+
+    // Pas connecté
+    if (!user) {
+      if (spanUser) spanUser.textContent = "";
+      if (reservationsLink) reservationsLink.href = "/reservations-ejs";
+      if (adminMenu) adminMenu.classList.add("d-none");
+    } else {
+      // Texte “Connecté : ...”
+      if (spanUser) spanUser.textContent = "Connecté : " + user.username;
+
+      // Lien Mes réservations avec userId
+      if (reservationsLink && user.id != null) {
+        reservationsLink.href =
+          "/reservations-ejs?userId=" + encodeURIComponent(user.id);
+      }
+
+      // Affichage du menu Admin selon les rôles
+      const roles = user.roles || [];
+      const isAdmin =
+        roles.includes("admin") || roles.includes("ROLE_ADMIN");
+
+      if (adminMenu) {
+        if (isAdmin) adminMenu.classList.remove("d-none");
+        else adminMenu.classList.add("d-none");
+      }
+    }
+
+    // Fonction globale logout()
+    window.logout = function () {
+      localStorage.removeItem("cinemaUser");
+      localStorage.removeItem("token");
+      localStorage.removeItem("username");
+      localStorage.removeItem("userId");
+      window.location.href = "/";
+    };
+  })();
+</script>
+>>>>>>> aedfb4c (Travail sur le backend cinéma)

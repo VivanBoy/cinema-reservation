@@ -46,6 +46,7 @@ app.get("/", (req, res) => {
 // 1) Liste des films
 app.get("/films-ejs", async (req, res) => {
   try {
+<<<<<<< HEAD
     const movies = await Movie.findAll({
       order: [["title", "ASC"]],
     });
@@ -53,6 +54,25 @@ app.get("/films-ejs", async (req, res) => {
     res.render("films", {
       movies,
       activePage: "films",       // <-- important
+=======
+    const page = parseInt(req.query.page || "1", 10);
+    const limit = 3; // films par page
+    const offset = (page - 1) * limit;
+
+    const { rows: movies, count } = await Movie.findAndCountAll({
+      order: [["title", "ASC"]],
+      limit,
+      offset,
+    });
+
+    const totalPages = Math.ceil(count / limit);
+
+    res.render("films", {
+      movies,
+      page,
+      totalPages,
+      activePage: "films",
+>>>>>>> aedfb4c (Travail sur le backend cinéma)
     });
   } catch (error) {
     console.error("Erreur /films-ejs :", error);
@@ -115,6 +135,7 @@ app.get("/films-ejs/:id/showtimes", async (req, res) => {
 // 4) Page "Mes réservations" (EJS)
 app.get("/reservations-ejs", async (req, res) => {
   try {
+<<<<<<< HEAD
     let { userId, username } = req.query;
 
     // Si on a seulement le username (cas normal), on retrouve l'id
@@ -143,6 +164,26 @@ app.get("/reservations-ejs", async (req, res) => {
 
     const bookings = await Booking.findAll({
       where: { user_id: id },
+=======
+    const userId = parseInt(req.query.userId, 10);
+
+    // Aucun userId -> page “aucun utilisateur” (status 200 pour éviter l'erreur rouge)
+    if (!userId || Number.isNaN(userId)) {
+      return res.status(200).render("reservations-no-user", {
+        activePage: "reservations",
+      });
+    }
+
+    const user = await User.findByPk(userId);
+    if (!user) {
+      return res.status(200).render("reservations-no-user", {
+        activePage: "reservations",
+      });
+    }
+
+    const bookings = await Booking.findAll({
+      where: { user_id: userId },
+>>>>>>> aedfb4c (Travail sur le backend cinéma)
       include: [
         {
           model: Showtime,
@@ -153,25 +194,47 @@ app.get("/reservations-ejs", async (req, res) => {
     });
 
     res.render("reservations", {
+<<<<<<< HEAD
       user,
       bookings,
     });
   } catch (error) {
     console.error("Erreur /reservations-ejs :", error);
+=======
+      activePage: "reservations",
+      user: {
+        id: user.id,
+        username: user.username,
+      },
+      bookings,
+    });
+  } catch (err) {
+    console.error("Erreur GET /reservations-ejs :", err);
+>>>>>>> aedfb4c (Travail sur le backend cinéma)
     res.status(500).send("Erreur serveur");
   }
 });
 
 // PAGES ADMIN EJS (AJOUT FILM + SEANCE)
+<<<<<<< HEAD
 
 app.get("/admin/movies/new", (req, res) => {
   res.render("admin-new-movie", {
     activePage: "admin",
+=======
+// Formulaire ajout de film (Admin)
+app.get("/admin/movies/new", (req, res) => {
+  res.render("admin-new-movie", {
+    error: null,
+    old: {},
+    activePage: "admin-movies",
+>>>>>>> aedfb4c (Travail sur le backend cinéma)
   });
 });
 
 app.post("/admin/movies", async (req, res) => {
   try {
+<<<<<<< HEAD
     const { title, description, rating, duration_minutes, release_date } = req.body;
 
     await Movie.create({
@@ -180,15 +243,83 @@ app.post("/admin/movies", async (req, res) => {
       rating,
       duration_minutes: duration_minutes || null,
       release_date: release_date || null,
+=======
+    const {
+      title,
+      description,
+      rating,
+      duration_minutes,
+      release_date,
+      poster_url,
+    } = req.body;
+
+    const old = {
+      title,
+      description,
+      rating,
+      duration_minutes,
+      release_date,
+      poster_url,
+    };
+
+    const errors = [];
+
+    if (!title || !title.trim()) {
+      errors.push("Le titre est obligatoire.");
+    } else if (title.trim().length < 2) {
+      errors.push("Le titre doit contenir au moins 2 caractères.");
+    }
+
+    if (duration_minutes) {
+      const d = Number(duration_minutes);
+      if (Number.isNaN(d) || d <= 0) {
+        errors.push("La durée doit être un nombre positif.");
+      }
+    }
+
+    if (rating && rating.length > 10) {
+      errors.push(
+        "La classification (rating) est trop longue (10 caractères max)."
+      );
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).render("admin-new-movie", {
+        error: errors.join(" "),
+        old,
+        activePage: "admin-movies",
+      });
+    }
+
+    await Movie.create({
+      title: title.trim(),
+      description: description || null,
+      rating: rating || null,
+      duration_minutes: duration_minutes || null,
+      release_date: release_date || null,
+      poster_url: poster_url || null,
+>>>>>>> aedfb4c (Travail sur le backend cinéma)
     });
 
     res.redirect("/films-ejs");
   } catch (error) {
     console.error("Erreur POST /admin/movies :", error);
+<<<<<<< HEAD
     res.status(500).send("Erreur lors de la création du film");
   }
 });
 
+=======
+    res.status(500).render("admin-new-movie", {
+      error: "Erreur lors de la création du film.",
+      old: req.body,
+      activePage: "admin-movies",
+    });
+  }
+});
+
+// Formulaire ajout de séance
+>>>>>>> aedfb4c (Travail sur le backend cinéma)
 app.get("/admin/showtimes/new", async (req, res) => {
   try {
     const movies = await Movie.findAll({ order: [["title", "ASC"]] });
