@@ -24,37 +24,28 @@ const app = express();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// MIDDLEWARES
+// ========== MIDDLEWARES ==========
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-//  EJS 
+// ========== EJS ==========
 app.set("view engine", "ejs");
 app.set("views", path.join(__dirname, "views"));
 
-// Fichiers statiques (frontend : index.html, css, js, img, etc.)
+// ========== FICHIERS STATIQUES (FRONTEND) ==========
 app.use(express.static(path.join(__dirname, "frontend")));
 
-// PAGES HTML / EJS 
+// ========== ROUTES PAGES HTML / EJS ==========
 
-// Page d'accueil → on envoie la page de login (frontend/index.html)
+// Page d'accueil → page de login (frontend/index.html)
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "frontend", "index.html"));
 });
 
-// 1) Liste des films
+// 1) Liste des films (avec pagination)
 app.get("/films-ejs", async (req, res) => {
   try {
-<<<<<<< HEAD
-    const movies = await Movie.findAll({
-      order: [["title", "ASC"]],
-    });
-
-    res.render("films", {
-      movies,
-      activePage: "films",       // <-- important
-=======
     const page = parseInt(req.query.page || "1", 10);
     const limit = 3; // films par page
     const offset = (page - 1) * limit;
@@ -65,14 +56,13 @@ app.get("/films-ejs", async (req, res) => {
       offset,
     });
 
-    const totalPages = Math.ceil(count / limit);
+    const totalPages = Math.max(1, Math.ceil(count / limit));
 
     res.render("films", {
       movies,
       page,
       totalPages,
       activePage: "films",
->>>>>>> aedfb4c (Travail sur le backend cinéma)
     });
   } catch (error) {
     console.error("Erreur /films-ejs :", error);
@@ -135,39 +125,9 @@ app.get("/films-ejs/:id/showtimes", async (req, res) => {
 // 4) Page "Mes réservations" (EJS)
 app.get("/reservations-ejs", async (req, res) => {
   try {
-<<<<<<< HEAD
-    let { userId, username } = req.query;
-
-    // Si on a seulement le username (cas normal), on retrouve l'id
-    if (!userId && username) {
-      const userByName = await User.findOne({ where: { username } });
-      if (userByName) {
-        userId = userByName.id;
-      }
-    }
-
-    if (!userId) {
-      // Aucun user fourni => page d'explication
-      return res.status(400).render("reservations-no-user");
-    }
-
-    const id = parseInt(userId, 10);
-    if (Number.isNaN(id)) {
-      return res.status(400).render("reservations-no-user");
-    }
-
-    const user = await User.findByPk(id);
-
-    if (!user) {
-      return res.status(404).render("reservations-no-user");
-    }
-
-    const bookings = await Booking.findAll({
-      where: { user_id: id },
-=======
     const userId = parseInt(req.query.userId, 10);
 
-    // Aucun userId -> page “aucun utilisateur” (status 200 pour éviter l'erreur rouge)
+    // Aucun userId → page d'explication (pas d'erreur rouge)
     if (!userId || Number.isNaN(userId)) {
       return res.status(200).render("reservations-no-user", {
         activePage: "reservations",
@@ -183,7 +143,6 @@ app.get("/reservations-ejs", async (req, res) => {
 
     const bookings = await Booking.findAll({
       where: { user_id: userId },
->>>>>>> aedfb4c (Travail sur le backend cinéma)
       include: [
         {
           model: Showtime,
@@ -194,13 +153,6 @@ app.get("/reservations-ejs", async (req, res) => {
     });
 
     res.render("reservations", {
-<<<<<<< HEAD
-      user,
-      bookings,
-    });
-  } catch (error) {
-    console.error("Erreur /reservations-ejs :", error);
-=======
       activePage: "reservations",
       user: {
         id: user.id,
@@ -210,40 +162,23 @@ app.get("/reservations-ejs", async (req, res) => {
     });
   } catch (err) {
     console.error("Erreur GET /reservations-ejs :", err);
->>>>>>> aedfb4c (Travail sur le backend cinéma)
     res.status(500).send("Erreur serveur");
   }
 });
 
-// PAGES ADMIN EJS (AJOUT FILM + SEANCE)
-<<<<<<< HEAD
+// ========== PAGES ADMIN EJS (AJOUT FILM + SÉANCE) ==========
 
-app.get("/admin/movies/new", (req, res) => {
-  res.render("admin-new-movie", {
-    activePage: "admin",
-=======
 // Formulaire ajout de film (Admin)
 app.get("/admin/movies/new", (req, res) => {
   res.render("admin-new-movie", {
     error: null,
     old: {},
-    activePage: "admin-movies",
->>>>>>> aedfb4c (Travail sur le backend cinéma)
+    activePage: "admin",
   });
 });
 
 app.post("/admin/movies", async (req, res) => {
   try {
-<<<<<<< HEAD
-    const { title, description, rating, duration_minutes, release_date } = req.body;
-
-    await Movie.create({
-      title,
-      description,
-      rating,
-      duration_minutes: duration_minutes || null,
-      release_date: release_date || null,
-=======
     const {
       title,
       description,
@@ -287,7 +222,7 @@ app.post("/admin/movies", async (req, res) => {
       return res.status(400).render("admin-new-movie", {
         error: errors.join(" "),
         old,
-        activePage: "admin-movies",
+        activePage: "admin",
       });
     }
 
@@ -298,28 +233,20 @@ app.post("/admin/movies", async (req, res) => {
       duration_minutes: duration_minutes || null,
       release_date: release_date || null,
       poster_url: poster_url || null,
->>>>>>> aedfb4c (Travail sur le backend cinéma)
     });
 
     res.redirect("/films-ejs");
   } catch (error) {
     console.error("Erreur POST /admin/movies :", error);
-<<<<<<< HEAD
-    res.status(500).send("Erreur lors de la création du film");
-  }
-});
-
-=======
     res.status(500).render("admin-new-movie", {
       error: "Erreur lors de la création du film.",
       old: req.body,
-      activePage: "admin-movies",
+      activePage: "admin",
     });
   }
 });
 
-// Formulaire ajout de séance
->>>>>>> aedfb4c (Travail sur le backend cinéma)
+// Formulaire ajout de séance (Admin)
 app.get("/admin/showtimes/new", async (req, res) => {
   try {
     const movies = await Movie.findAll({ order: [["title", "ASC"]] });
@@ -354,39 +281,7 @@ app.post("/admin/showtimes", async (req, res) => {
   }
 });
 
-// Formulaire ajout de séance
-app.get("/admin/showtimes/new", async (req, res) => {
-  try {
-    const movies = await Movie.findAll({ order: [["title", "ASC"]] });
-    const rooms = await Room.findAll({ order: [["name", "ASC"]] });
-
-    res.render("admin-new-showtime", { movies, rooms });
-  } catch (error) {
-    console.error("Erreur GET /admin/showtimes/new :", error);
-    res.status(500).send("Erreur serveur");
-  }
-});
-
-app.post("/admin/showtimes", async (req, res) => {
-  try {
-    const { movie_id, room_id, start_time, price } = req.body;
-
-    const showtime = await Showtime.create({
-      movie_id,
-      room_id,
-      start_time,
-      price,
-    });
-
-    res.redirect(`/films-ejs/${showtime.movie_id}/showtimes`);
-  } catch (error) {
-    console.error("Erreur POST /admin/showtimes :", error);
-    res.status(500).send("Erreur lors de la création de la séance");
-  }
-});
-
-// API JSON 
-
+// ========== API JSON ==========
 app.get("/api", (req, res) => {
   res.json({ message: "Cinema reservation API is running..." });
 });
@@ -397,8 +292,7 @@ app.use("/api/rooms", roomRoutes);
 app.use("/api/showtimes", showtimeRoutes);
 app.use("/api/bookings", bookingRoutes);
 
-// LANCEMENT SERVEU
-
+// ========== LANCEMENT SERVEUR ==========
 connectDB();
 
 const PORT = process.env.PORT || 5000;
