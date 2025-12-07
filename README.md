@@ -231,3 +231,8 @@ la structure d’une application Node/Express,
 l’utilisation d’un ORM (Sequelize) avec MySQL,
 l’intégration d’un front léger EJS + Bootstrap,
 l’authentification par tokens (JWT) et la gestion de rôles.
+
+## Contribution d'Innocent
+
+- Ajout de la pagination sur la liste des films.
+- Intégration de la page “Mes réservations” avec QR codes.
