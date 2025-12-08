@@ -67,6 +67,33 @@ cinema-reservation/
 ├─ package.json
 └─ README.md
 ```
+## 🎨 Conception de l’interface (wireframes)
+
+Avant d’implémenter les vues EJS/Bootstrap, nous avons réalisé des wireframes
+pour définir la structure des principales pages de l’application.
+
+### Page d’accueil – Connexion / Inscription
+
+![Wireframe – Page d’accueil (connexion / inscription)](docs/wireframes/wireframe-login-register.png)
+
+Ce wireframe définit :
+- le logo et le titre de l’application,
+- le formulaire de **connexion** (nom d’utilisateur + mot de passe),
+- le formulaire de **création de compte** (prénom, nom, courriel, nom d’utilisateur, mot de passe),
+- un rappel sur le rôle par défaut (*client*) et sur la création des comptes admin.
+
+### Page « Films à l’affiche »
+
+![Wireframe – Page Films à l’affiche](docs/wireframes/wireframe-films-list.png)
+
+Ce wireframe a servi de base à la page `films.ejs` :
+- navbar avec **Films** / **Mes réservations** et l’utilisateur connecté,
+- grille de cartes de films avec l’affiche, le titre, la durée, la classification et un résumé,
+- boutons **Détails** et **Voir les séances**,
+- barre de pagination en bas de page (*précédent / 1 / 2 / 3 / suivant*).
+
+Ces maquettes ont ensuite été traduites en vues EJS avec Bootstrap 5 dans le projet.
+
 # Technologies utilisées
 ### Back-end
 
