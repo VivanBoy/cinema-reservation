@@ -9,6 +9,9 @@
       type="button"
       data-bs-toggle="collapse"
       data-bs-target="#mainNavbar"
+      aria-controls="mainNavbar"
+      aria-expanded="false"
+      aria-label="Basculer la navigation"
     >
       <span class="navbar-toggler-icon"></span>
     </button>
@@ -16,13 +19,6 @@
     <div class="collapse navbar-collapse" id="mainNavbar">
       <ul class="navbar-nav me-auto mb-2 mb-lg-0">
         <li class="nav-item">
-<<<<<<< HEAD
-          <a class="nav-link" href="/films-ejs">Films</a>
-        </li>
-
-        <li class="nav-item">
-          <a class="nav-link" id="reservationsLink" href="#">
-=======
           <a
             class="nav-link <%= activePage === 'films' ? 'active' : '' %>"
             href="/films-ejs"
@@ -37,22 +33,18 @@
             class="nav-link <%= activePage === 'reservations' ? 'active' : '' %>"
             href="/reservations-ejs"
           >
->>>>>>> aedfb4c (Travail sur le backend cinéma)
             Mes réservations
           </a>
         </li>
 
-<<<<<<< HEAD
-        <!-- Menu Admin (caché si pas admin) -->
-=======
-        <!-- Menu Admin -->
->>>>>>> aedfb4c (Travail sur le backend cinéma)
-        <li class="nav-item dropdown" id="adminMenu">
+        <!-- Menu Admin (caché par défaut, visible uniquement si admin en JS) -->
+        <li class="nav-item dropdown d-none" id="adminMenu">
           <a
             class="nav-link dropdown-toggle"
             href="#"
             role="button"
             data-bs-toggle="dropdown"
+            aria-expanded="false"
           >
             Admin
           </a>
@@ -73,10 +65,21 @@
 
       <div class="d-flex align-items-center gap-2">
         <span id="navbarUser" class="navbar-text text-white small"></span>
+
+        <!-- Bouton Connexion / Inscription (si pas connecté) -->
+        <a
+          id="loginBtn"
+          href="/"
+          class="btn btn-outline-light btn-sm d-none"
+        >
+          Connexion / Inscription
+        </a>
+
+        <!-- Bouton Déconnexion (si connecté) -->
         <button
+          id="logoutBtn"
           type="button"
-          class="btn btn-outline-light btn-sm"
-          onclick="logout()"
+          class="btn btn-outline-light btn-sm d-none"
         >
           Se déconnecter
         </button>
@@ -86,141 +89,91 @@
 </nav>
 
 <script>
-<<<<<<< HEAD
-  // --------- Lecture robuste de l'utilisateur stocké ---------
-  function getStoredUser() {
-    // Nouveau format : "cinemaUser" en JSON
-    try {
-      const raw = localStorage.getItem("cinemaUser");
-      if (raw) {
-        const obj = JSON.parse(raw);
-        if (obj && (obj.username || obj.id || obj.userId)) {
-          return obj;
+  (function () {
+    // Lecture robuste du user dans le localStorage
+    function getStoredUser() {
+      // Format principal : "cinemaUser" en JSON
+      try {
+        const raw = localStorage.getItem("cinemaUser");
+        if (raw) {
+          const obj = JSON.parse(raw);
+          if (obj && (obj.username || obj.id || obj.userId)) {
+            return obj;
+          }
         }
+      } catch (e) {
+        console.warn("Impossible de parser cinemaUser :", e);
       }
-    } catch (e) {
-      console.warn("Impossible de parser cinemaUser :", e);
+
+      // Ancien format de secours : username / userId / token
+      const backupUsername = localStorage.getItem("username");
+      const backupId = localStorage.getItem("userId");
+      const backupToken = localStorage.getItem("token");
+
+      if (backupUsername || backupId || backupToken) {
+        return {
+          username: backupUsername || null,
+          id: backupId ? parseInt(backupId, 10) : null,
+          roles: [],
+          token: backupToken || null,
+        };
+      }
+
+      return null;
     }
 
-    // Ancien format : username / userId / token séparés
-    const backupUsername = localStorage.getItem("username");
-    const backupId = localStorage.getItem("userId");
-    const backupToken = localStorage.getItem("token");
-
-    if (backupUsername || backupId || backupToken) {
-      return {
-        username: backupUsername || null,
-        id: backupId ? parseInt(backupId, 10) : null,
-        roles: [],
-        token: backupToken || null,
-      };
-    }
-
-    return null;
-  }
-
-  function updateNavbarFromUser() {
-    const spanUser = document.getElementById("navbarUser");
-    const adminMenu = document.getElementById("adminMenu");
-    const user = getStoredUser();
-
-    if (!user) {
-      if (spanUser) spanUser.textContent = "";
-      if (adminMenu) adminMenu.classList.add("d-none");
-      return;
-    }
-
-    if (spanUser && user.username) {
-      spanUser.textContent = "Connecté : " + user.username;
-    }
-
-    const roles = user.roles || [];
-    const isAdmin =
-      roles.includes("admin") ||
-      roles.includes("ROLE_ADMIN") ||
-      user.username === "ino1"; // au cas où
-
-    if (adminMenu) {
-      if (isAdmin) adminMenu.classList.remove("d-none");
-      else adminMenu.classList.add("d-none");
-    }
-  }
-
-  function setupReservationsLink() {
-    const link = document.getElementById("reservationsLink");
-    if (!link) return;
-
-    link.addEventListener("click", function (e) {
-      e.preventDefault();
+    function updateNavbar() {
       const user = getStoredUser();
 
-      if (!user || !user.username) {
-        alert("Veuillez vous connecter pour voir vos réservations.");
-        window.location.href = "/";
+      const spanUser = document.getElementById("navbarUser");
+      const reservationsLink = document.getElementById("reservationsLink");
+      const adminMenu = document.getElementById("adminMenu");
+      const loginBtn = document.getElementById("loginBtn");
+      const logoutBtn = document.getElementById("logoutBtn");
+
+      // Par défaut
+      if (spanUser) spanUser.textContent = "";
+      if (adminMenu) adminMenu.classList.add("d-none");
+
+      // Pas connecté
+      if (!user) {
+        if (reservationsLink) {
+          // Lien générique → affichera la page d’explication "reservations-no-user"
+          reservationsLink.href = "/reservations-ejs";
+        }
+        if (loginBtn) loginBtn.classList.remove("d-none");
+        if (logoutBtn) logoutBtn.classList.add("d-none");
         return;
       }
 
-      const username = user.username;
-      window.location.href =
-        "/reservations-ejs?username=" + encodeURIComponent(username);
-    });
-  }
-
-  function logout() {
-    localStorage.removeItem("cinemaUser");
-    localStorage.removeItem("token");
-    localStorage.removeItem("username");
-    localStorage.removeItem("userId");
-    window.location.href = "/";
-  }
-
-  document.addEventListener("DOMContentLoaded", function () {
-    updateNavbarFromUser();
-    setupReservationsLink();
-  });
-</script> 
-=======
-  (function () {
-    function getStoredUser() {
-      try {
-        return JSON.parse(localStorage.getItem("cinemaUser"));
-      } catch (e) {
-        return null;
+      // Connecté
+      if (spanUser && user.username) {
+        spanUser.textContent = "Connecté : " + user.username;
       }
-    }
 
-    const user = getStoredUser();
-    const spanUser = document.getElementById("navbarUser");
-    const reservationsLink = document.getElementById("reservationsLink");
-    const adminMenu = document.getElementById("adminMenu");
-
-    // Pas connecté
-    if (!user) {
-      if (spanUser) spanUser.textContent = "";
-      if (reservationsLink) reservationsLink.href = "/reservations-ejs";
-      if (adminMenu) adminMenu.classList.add("d-none");
-    } else {
-      // Texte “Connecté : ...”
-      if (spanUser) spanUser.textContent = "Connecté : " + user.username;
-
-      // Lien Mes réservations avec userId
+      // Lien "Mes réservations" avec userId quand il est disponible
       if (reservationsLink && user.id != null) {
         reservationsLink.href =
           "/reservations-ejs?userId=" + encodeURIComponent(user.id);
       }
 
-      // Affichage du menu Admin selon les rôles
+      // Affichage du menu Admin si rôle admin
       const roles = user.roles || [];
       const isAdmin =
-        roles.includes("admin") || roles.includes("ROLE_ADMIN");
+        roles.includes("admin") ||
+        roles.includes("ROLE_ADMIN");
 
       if (adminMenu) {
         if (isAdmin) adminMenu.classList.remove("d-none");
         else adminMenu.classList.add("d-none");
       }
+
+      // Boutons login / logout
+      if (loginBtn) loginBtn.classList.add("d-none");
+      if (logoutBtn) logoutBtn.classList.remove("d-none");
     }
 
-    // Fonction globale logout()
+    // Fonction logout globale
     window.logout = function () {
       localStorage.removeItem("cinemaUser");
       localStorage.removeItem("token");
@@ -228,6 +181,7 @@
       localStorage.removeItem("userId");
       window.location.href = "/";
     };
+
+    document.addEventListener("DOMContentLoaded", updateNavbar);
   })();
 </script>
->>>>>>> aedfb4c (Travail sur le backend cinéma)
