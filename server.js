@@ -123,18 +123,28 @@ app.get("/films-ejs/:id/showtimes", async (req, res) => {
 });
 
 // 4) Page "Mes réservations" (EJS)
+// 4) Page "Mes réservations" (EJS)
 app.get("/reservations-ejs", async (req, res) => {
   try {
-    const userId = parseInt(req.query.userId, 10);
+    const { username, userId } = req.query;
 
-    // Aucun userId → page d'explication (pas d'erreur rouge)
-    if (!userId || Number.isNaN(userId)) {
-      return res.status(200).render("reservations-no-user", {
-        activePage: "reservations",
+    let user = null;
+
+    // 1) Si on a un username dans l'URL → priorité
+    if (username && username.trim()) {
+      user = await User.findOne({
+        where: { username: username.trim() },
       });
     }
+    // 2) Sinon, si on a un userId → fallback
+    else if (userId) {
+      const idNum = parseInt(userId, 10);
+      if (!Number.isNaN(idNum)) {
+        user = await User.findByPk(idNum);
+      }
+    }
 
-    const user = await User.findByPk(userId);
+    // Aucun utilisateur trouvé → page d'info (pas d'erreur rouge)
     if (!user) {
       return res.status(200).render("reservations-no-user", {
         activePage: "reservations",
@@ -142,7 +152,7 @@ app.get("/reservations-ejs", async (req, res) => {
     }
 
     const bookings = await Booking.findAll({
-      where: { user_id: userId },
+      where: { user_id: user.id },
       include: [
         {
           model: Showtime,
@@ -260,6 +270,167 @@ app.get("/admin/showtimes/new", async (req, res) => {
   } catch (error) {
     console.error("Erreur GET /admin/showtimes/new :", error);
     res.status(500).send("Erreur serveur");
+  }
+});
+
+// --------- ADMIN : ÉDITION FILM ---------
+app.get("/admin/movies/:id/edit", async (req, res) => {
+  try {
+    const movie = await Movie.findByPk(req.params.id);
+    if (!movie) {
+      return res.status(404).send("Film introuvable");
+    }
+
+    res.render("admin-edit-movie", {
+      movie,
+      error: null,
+      activePage: "admin",
+    });
+  } catch (error) {
+    console.error("Erreur GET /admin/movies/:id/edit :", error);
+    res.status(500).send("Erreur serveur");
+  }
+});
+
+app.post("/admin/movies/:id", async (req, res) => {
+  try {
+    const movie = await Movie.findByPk(req.params.id);
+    if (!movie) {
+      return res.status(404).send("Film introuvable");
+    }
+
+    const {
+      title,
+      description,
+      rating,
+      duration_minutes,
+      release_date,
+      poster_url,
+    } = req.body;
+
+    const old = {
+      title,
+      description,
+      rating,
+      duration_minutes,
+      release_date,
+      poster_url,
+    };
+
+    const errors = [];
+
+    if (!title || !title.trim()) {
+      errors.push("Le titre est obligatoire.");
+    } else if (title.trim().length < 2) {
+      errors.push("Le titre doit contenir au moins 2 caractères.");
+    }
+
+    if (duration_minutes) {
+      const d = Number(duration_minutes);
+      if (Number.isNaN(d) || d <= 0) {
+        errors.push("La durée doit être un nombre positif.");
+      }
+    }
+
+    if (rating && rating.length > 10) {
+      errors.push(
+        "La classification (rating) est trop longue (10 caractères max)."
+      );
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).render("admin-edit-movie", {
+        movie: { ...movie.toJSON(), ...old },
+        error: errors.join(" "),
+        activePage: "admin",
+      });
+    }
+
+    await movie.update({
+      title: title.trim(),
+      description: description || null,
+      rating: rating || null,
+      duration_minutes: duration_minutes || null,
+      release_date: release_date || null,
+      poster_url: poster_url || null,
+    });
+
+    res.redirect("/films-ejs");
+  } catch (error) {
+    console.error("Erreur POST /admin/movies/:id :", error);
+    res.status(500).render("admin-edit-movie", {
+      movie: { id: req.params.id, ...req.body },
+      error: "Erreur lors de la mise à jour du film.",
+      activePage: "admin",
+    });
+  }
+});
+
+// --------- ADMIN : ÉDITION SÉANCE ---------
+app.get("/admin/showtimes/:id/edit", async (req, res) => {
+  try {
+    const showtime = await Showtime.findByPk(req.params.id);
+    if (!showtime) {
+      return res.status(404).send("Séance introuvable");
+    }
+
+    const movies = await Movie.findAll({ order: [["title", "ASC"]] });
+    const rooms = await Room.findAll({ order: [["name", "ASC"]] });
+
+    res.render("admin-edit-showtime", {
+      showtime,
+      movies,
+      rooms,
+      error: null,
+      activePage: "admin",
+    });
+  } catch (error) {
+    console.error("Erreur GET /admin/showtimes/:id/edit :", error);
+    res.status(500).send("Erreur serveur");
+  }
+});
+
+app.post("/admin/showtimes/:id", async (req, res) => {
+  try {
+    const showtime = await Showtime.findByPk(req.params.id);
+    if (!showtime) {
+      return res.status(404).send("Séance introuvable");
+    }
+
+    const { movie_id, room_id, start_time, price } = req.body;
+    const errors = [];
+
+    if (!movie_id) errors.push("Le film est obligatoire.");
+    if (!room_id) errors.push("La salle est obligatoire.");
+    if (!start_time) errors.push("La date/heure de la séance est obligatoire.");
+    if (price && Number.isNaN(Number(price))) {
+      errors.push("Le prix doit être un nombre.");
+    }
+
+    if (errors.length > 0) {
+      const movies = await Movie.findAll({ order: [["title", "ASC"]] });
+      const rooms = await Room.findAll({ order: [["name", "ASC"]] });
+
+      return res.status(400).render("admin-edit-showtime", {
+        showtime: { ...showtime.toJSON(), movie_id, room_id, start_time, price },
+        movies,
+        rooms,
+        error: errors.join(" "),
+        activePage: "admin",
+      });
+    }
+
+    await showtime.update({
+      movie_id,
+      room_id,
+      start_time,
+      price,
+    });
+
+    res.redirect(`/films-ejs/${showtime.movie_id}/showtimes`);
+  } catch (error) {
+    console.error("Erreur POST /admin/showtimes/:id :", error);
+    res.status(500).send("Erreur lors de la mise à jour de la séance");
   }
 });
 
