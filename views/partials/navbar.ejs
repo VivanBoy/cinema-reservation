@@ -37,7 +37,7 @@
           </a>
         </li>
 
-        <!-- Menu Admin (caché par défaut, visible uniquement si admin en JS) -->
+        <!-- Menu Admin : caché par défaut, visible uniquement si utilisateur admin -->
         <li class="nav-item dropdown d-none" id="adminMenu">
           <a
             class="nav-link dropdown-toggle"
@@ -66,7 +66,7 @@
       <div class="d-flex align-items-center gap-2">
         <span id="navbarUser" class="navbar-text text-white small"></span>
 
-        <!-- Bouton Connexion / Inscription (si pas connecté) -->
+        <!-- Bouton Connexion / Inscription (affiché si pas connecté) -->
         <a
           id="loginBtn"
           href="/"
@@ -75,11 +75,12 @@
           Connexion / Inscription
         </a>
 
-        <!-- Bouton Déconnexion (si connecté) -->
+        <!-- Bouton Déconnexion (affiché si connecté) -->
         <button
           id="logoutBtn"
           type="button"
           class="btn btn-outline-light btn-sm d-none"
+          onclick="logout()"
         >
           Se déconnecter
         </button>
@@ -89,99 +90,119 @@
 </nav>
 
 <script>
-  (function () {
-    // Lecture robuste du user dans le localStorage
-    function getStoredUser() {
-      // Format principal : "cinemaUser" en JSON
-      try {
-        const raw = localStorage.getItem("cinemaUser");
-        if (raw) {
-          const obj = JSON.parse(raw);
-          if (obj && (obj.username || obj.id || obj.userId)) {
-            return obj;
-          }
+  // --- Lecture robuste de l'utilisateur dans le localStorage ---
+  function getStoredUser() {
+    // Nouveau format : "cinemaUser" en JSON
+    try {
+      const raw = localStorage.getItem("cinemaUser");
+      if (raw) {
+        const obj = JSON.parse(raw);
+        if (obj && (obj.username || obj.id || obj.userId)) {
+          return obj;
         }
-      } catch (e) {
-        console.warn("Impossible de parser cinemaUser :", e);
       }
-
-      // Ancien format de secours : username / userId / token
-      const backupUsername = localStorage.getItem("username");
-      const backupId = localStorage.getItem("userId");
-      const backupToken = localStorage.getItem("token");
-
-      if (backupUsername || backupId || backupToken) {
-        return {
-          username: backupUsername || null,
-          id: backupId ? parseInt(backupId, 10) : null,
-          roles: [],
-          token: backupToken || null,
-        };
-      }
-
-      return null;
+    } catch (e) {
+      console.warn("Impossible de parser cinemaUser :", e);
     }
 
-    function updateNavbar() {
+    // Ancien format : username / userId / token séparés
+    const backupUsername = localStorage.getItem("username");
+    const backupId = localStorage.getItem("userId");
+    const backupToken = localStorage.getItem("token");
+
+    if (backupUsername || backupId || backupToken) {
+      return {
+        username: backupUsername || null,
+        id: backupId ? parseInt(backupId, 10) : null,
+        roles: [],
+        token: backupToken || null,
+      };
+    }
+
+    return null;
+  }
+
+  function updateNavbarFromUser() {
+    const user = getStoredUser();
+
+    const spanUser = document.getElementById("navbarUser");
+    const adminMenu = document.getElementById("adminMenu");
+    const loginBtn = document.getElementById("loginBtn");
+    const logoutBtn = document.getElementById("logoutBtn");
+
+    // Admin-only (boutons "Modifier film/séance")
+    const adminOnlyEls = document.querySelectorAll(".js-admin-only");
+
+    // Par défaut
+    if (spanUser) spanUser.textContent = "";
+    if (adminMenu) adminMenu.classList.add("d-none");
+    adminOnlyEls.forEach((el) => el.classList.add("d-none"));
+
+    // Pas connecté
+    if (!user || !user.username) {
+      if (loginBtn) loginBtn.classList.remove("d-none");
+      if (logoutBtn) logoutBtn.classList.add("d-none");
+      return;
+    }
+
+    // Connecté
+    if (spanUser) {
+      spanUser.textContent = "Connecté : " + user.username;
+    }
+    if (loginBtn) loginBtn.classList.add("d-none");
+    if (logoutBtn) logoutBtn.classList.remove("d-none");
+
+    // Rôle admin : uniquement ino1 (et éventuellement role admin)
+    const roles = user.roles || [];
+    const isAdmin =
+      user.username === "ino1" ||
+      roles.includes("admin") ||
+      roles.includes("ROLE_ADMIN");
+
+    if (adminMenu) {
+      if (isAdmin) adminMenu.classList.remove("d-none");
+      else adminMenu.classList.add("d-none");
+    }
+
+    adminOnlyEls.forEach((el) => {
+      if (isAdmin) el.classList.remove("d-none");
+      else el.classList.add("d-none");
+    });
+  }
+
+  function setupReservationsLink() {
+    const link = document.getElementById("reservationsLink");
+    if (!link) return;
+
+    link.addEventListener("click", function (e) {
+      e.preventDefault();
       const user = getStoredUser();
 
-      const spanUser = document.getElementById("navbarUser");
-      const reservationsLink = document.getElementById("reservationsLink");
-      const adminMenu = document.getElementById("adminMenu");
-      const loginBtn = document.getElementById("loginBtn");
-      const logoutBtn = document.getElementById("logoutBtn");
-
-      // Par défaut
-      if (spanUser) spanUser.textContent = "";
-      if (adminMenu) adminMenu.classList.add("d-none");
-
-      // Pas connecté
-      if (!user) {
-        if (reservationsLink) {
-          // Lien générique → affichera la page d’explication "reservations-no-user"
-          reservationsLink.href = "/reservations-ejs";
-        }
-        if (loginBtn) loginBtn.classList.remove("d-none");
-        if (logoutBtn) logoutBtn.classList.add("d-none");
+      if (!user || !user.username) {
+        alert("Veuillez vous connecter pour voir vos réservations.");
+        window.location.href = "/";
         return;
       }
 
-      // Connecté
-      if (spanUser && user.username) {
-        spanUser.textContent = "Connecté : " + user.username;
-      }
+      const username = user.username;
+      window.location.href =
+        "/reservations-ejs?username=" + encodeURIComponent(username);
+    });
+  }
 
-      // Lien "Mes réservations" avec userId quand il est disponible
-      if (reservationsLink && user.id != null) {
-        reservationsLink.href =
-          "/reservations-ejs?userId=" + encodeURIComponent(user.id);
-      }
+  function logout() {
+    localStorage.removeItem("cinemaUser");
+    localStorage.removeItem("token");
+    localStorage.removeItem("username");
+    localStorage.removeItem("userId");
+    window.location.href = "/";
+  }
 
-      // Affichage du menu Admin si rôle admin
-      const roles = user.roles || [];
-      const isAdmin =
-        roles.includes("admin") ||
-        roles.includes("ROLE_ADMIN");
+  // On expose logout pour le bouton
+  window.logout = logout;
 
-      if (adminMenu) {
-        if (isAdmin) adminMenu.classList.remove("d-none");
-        else adminMenu.classList.add("d-none");
-      }
-
-      // Boutons login / logout
-      if (loginBtn) loginBtn.classList.add("d-none");
-      if (logoutBtn) logoutBtn.classList.remove("d-none");
-    }
-
-    // Fonction logout globale
-    window.logout = function () {
-      localStorage.removeItem("cinemaUser");
-      localStorage.removeItem("token");
-      localStorage.removeItem("username");
-      localStorage.removeItem("userId");
-      window.location.href = "/";
-    };
-
-    document.addEventListener("DOMContentLoaded", updateNavbar);
-  })();
+  document.addEventListener("DOMContentLoaded", function () {
+    updateNavbarFromUser();
+    setupReservationsLink();
+  });
 </script>
