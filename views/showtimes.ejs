@@ -14,9 +14,18 @@
     <%- include("partials/navbar") %>
 
     <main class="container py-5">
-      <h1 class="mb-4 fw-bold">
-        Séances pour <%= movie ? movie.title : "film inconnu" %>
-      </h1>
+      <header class="mb-4">
+        <h1 class="fw-bold mb-1">
+          Séances pour <%= movie ? movie.title : "film inconnu" %>
+        </h1>
+        <% if (movie && movie.description) { %>
+          <p class="text-muted mb-0">
+            <%= movie.description.length > 180
+                  ? movie.description.slice(0, 180) + "…"
+                  : movie.description %>
+          </p>
+        <% } %>
+      </header>
 
       <% if (!movie) { %>
         <div class="alert alert-danger">
@@ -28,39 +37,57 @@
         </div>
       <% } else { %>
         <div class="row g-4">
-          <% showtimes.forEach(function(st) { %>
+          <% showtimes.forEach(function (st) { 
+               const startTime = st.start_time
+                 ? new Date(st.start_time)
+                 : null;
+          %>
             <div class="col-md-6 col-lg-4">
               <div class="card h-100 shadow-sm">
                 <div class="card-body d-flex flex-column">
-                  <h5 class="card-title">Séance</h5>
+                  <h5 class="card-title mb-2">Séance</h5>
 
-                  <p class="card-text flex-grow-1">
+                  <p class="card-text flex-grow-1 mb-3">
                     <strong>Date &amp; heure :</strong><br />
-                    <%=
-                      st.start_time
-                        ? st.start_time.toLocaleString("fr-CA", {
+                    <% if (startTime) { %>
+                      <%= startTime.toLocaleString("fr-CA", {
                             weekday: "short",
                             year: "numeric",
                             month: "short",
                             day: "2-digit",
                             hour: "2-digit",
                             minute: "2-digit",
-                          })
-                        : "N/A"
-                    %>
+                          }) %>
+                    <% } else { %>
+                      N/A
+                    <% } %>
                     <br />
                     <strong>Salle :</strong>
                     <%= st.Room ? st.Room.name : "N/A" %><br />
-                    <strong>Prix :</strong> <%= st.price %> $
+                    <strong>Prix :</strong>
+                    <% if (st.price !== null && st.price !== undefined) { %>
+                      <%= Number(st.price).toFixed(2) %> $
+                    <% } else { %>
+                      N/A
+                    <% } %>
                   </p>
 
+                  <!-- Bouton Réserver -->
                   <button
                     type="button"
                     class="btn btn-success mt-auto"
-                    onclick="reserveShowtime(<%= st.id %>, <%= st.price %>)"
+                    onclick="reserveShowtime(<%= st.id %>, <%= st.price || 0 %>)"
                   >
-                    Réserver (démo)
+                    Réserver
                   </button>
+
+                  <!-- Bouton Modifier séance (admin uniquement, géré en JS) -->
+                  <a
+                    href="/admin/showtimes/<%= st.id %>/edit"
+                    class="btn btn-outline-secondary btn-sm mt-2 js-admin-only d-none"
+                  >
+                    Modifier la séance
+                  </a>
                 </div>
               </div>
             </div>
@@ -80,10 +107,21 @@
     <script>
       // Utilise getStoredUser() défini dans partials/navbar.ejs
       async function reserveShowtime(showtimeId, price) {
-        const user = getStoredUser();
+        const user =
+          typeof getStoredUser === "function" ? getStoredUser() : null;
 
-        if (!user || !user.token) {
-          alert("Veuillez vous connecter pour voir vos réservations.");
+        if (!user || !user.username) {
+          alert("Veuillez vous connecter pour réserver une séance.");
+          window.location.href = "/";
+          return;
+        }
+
+        const token =
+          (user && (user.token || user.accessToken || user.jwt)) ||
+          localStorage.getItem("token");
+
+        if (!token) {
+          alert("Veuillez vous reconnecter.");
           window.location.href = "/";
           return;
         }
@@ -93,7 +131,7 @@
             method: "POST",
             headers: {
               "Content-Type": "application/json",
-              Authorization: "Bearer " + user.token,
+              Authorization: "Bearer " + token,
             },
             body: JSON.stringify({
               showtime_id: showtimeId,
@@ -101,19 +139,25 @@
             }),
           });
 
-          const data = await res.json();
+          const data = await res.json().catch(() => ({}));
 
           if (!res.ok) {
-            alert(data.message || "Impossible de créer la réservation.");
+            alert(
+              data.message ||
+                data.error ||
+                "Impossible de créer la réservation."
+            );
             return;
           }
 
           alert("Réservation créée avec succès !");
-          const username = user.username || "";
+
+          // Redirection vers Mes réservations avec username
           window.location.href =
-            "/reservations-ejs?username=" + encodeURIComponent(username);
+            "/reservations-ejs?username=" +
+            encodeURIComponent(user.username);
         } catch (err) {
-          console.error(err);
+          console.error("Erreur réservation :", err);
           alert("Erreur réseau lors de la réservation.");
         }
       }
