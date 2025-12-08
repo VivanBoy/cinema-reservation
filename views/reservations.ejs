@@ -43,6 +43,12 @@
                  const bookingTime = bk.booking_time
                    ? new Date(bk.booking_time)
                    : null;
+                 const status = (bk.status || "N/A").toString();
+                 const statusLower = status.toLowerCase();
+                 const isCancelled =
+                   statusLower === "cancelled" ||
+                   statusLower === "annulée" ||
+                   statusLower === "annulee";
             %>
               <div class="col-md-6">
                 <div class="card shadow-sm h-100">
@@ -78,7 +84,7 @@
                       <% } %>
                       <br />
                       <strong>Statut :</strong>
-                      <%= bk.status || "N/A" %>
+                      <%= status %>
                       <br />
                       <strong>Réservé le :</strong>
                       <% if (bookingTime) { %>
@@ -88,10 +94,19 @@
                       <% } %>
                     </p>
 
-                    <p class="small text-muted mt-auto mb-0">
-                      Code QR de la réservation :
-                      <em>(non implémenté dans cette version)</em>
-                    </p>
+                    <% if (!isCancelled) { %>
+                      <button
+                        type="button"
+                        class="btn btn-outline-danger btn-sm mt-auto"
+                        onclick="cancelBooking(<%= bk.id %>)"
+                      >
+                        Annuler la réservation
+                      </button>
+                    <% } else { %>
+                      <p class="text-danger small mt-auto mb-0">
+                        Réservation annulée.
+                      </p>
+                    <% } %>
                   </div>
                 </div>
               </div>
@@ -108,5 +123,54 @@
     </main>
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+    <script>
+      // Annuler une réservation
+      async function cancelBooking(bookingId) {
+        if (!confirm("Voulez-vous vraiment annuler cette réservation ?")) {
+          return;
+        }
+
+        const user =
+          typeof getStoredUser === "function" ? getStoredUser() : null;
+
+        const token =
+          (user && (user.token || user.accessToken || user.jwt)) ||
+          localStorage.getItem("token");
+
+        if (!token) {
+          alert("Veuillez vous reconnecter.");
+          window.location.href = "/";
+          return;
+        }
+
+        try {
+          const res = await fetch("/api/bookings/" + bookingId, {
+            method: "DELETE",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + token,
+            },
+          });
+
+          const data = await res.json().catch(() => ({}));
+
+          if (!res.ok) {
+            alert(
+              data.message ||
+                data.error ||
+                "Impossible d'annuler la réservation."
+            );
+            return;
+          }
+
+          alert("Réservation annulée.");
+          window.location.reload();
+        } catch (err) {
+          console.error("Erreur lors de l'annulation :", err);
+          alert("Erreur réseau lors de l'annulation.");
+        }
+      }
+    </script>
   </body>
 </html>
