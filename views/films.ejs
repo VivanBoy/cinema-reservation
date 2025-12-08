@@ -18,17 +18,22 @@
 
     <!-- CONTENU -->
     <main class="container py-5">
-      <h1 class="mb-4 fw-bold">Films à l'affiche</h1>
+      <header class="mb-4 d-flex justify-content-between align-items-center">
+        <h1 class="fw-bold mb-0">Films à l'affiche</h1>
+        <p class="mb-0 text-muted small">
+          Explorez les films disponibles et réservez vos séances.
+        </p>
+      </header>
 
       <div class="row g-4 mb-4">
         <% if (!movies || movies.length === 0) { %>
           <div class="col-12">
-            <div class="alert alert-info">
+            <div class="alert alert-info mb-0">
               Aucun film disponible pour le moment.
             </div>
           </div>
         <% } else { %>
-          <% movies.forEach((movie) => { %>
+          <% movies.forEach(function (movie) { %>
             <div class="col-md-4">
               <div class="card h-100 shadow-sm">
                 <% if (movie.poster_url) { %>
@@ -36,29 +41,54 @@
                     src="<%= movie.poster_url %>"
                     class="card-img-top"
                     alt="Affiche de <%= movie.title %>"
+                    loading="lazy"
                   />
                 <% } %>
 
                 <div class="card-body d-flex flex-column">
-                  <h5 class="card-title"><%= movie.title %></h5>
+                  <h5 class="card-title mb-2"><%= movie.title %></h5>
 
-                  <p class="card-text flex-grow-1">
-                    <%= movie.description || "Aucune description disponible." %>
-                  </p>
-
-                  <p class="card-text small text-muted mb-3">
+                  <p class="card-text text-muted small mb-2">
                     Durée :
                     <%= movie.duration_minutes || "N/A" %> min<br />
                     Classification :
                     <%= movie.rating || "N/A" %>
                   </p>
 
-                  <a
-                    href="/films-ejs/<%= movie.id %>"
-                    class="btn btn-primary mt-auto"
-                  >
-                    Voir les détails
-                  </a>
+                  <p class="card-text flex-grow-1">
+                    <% if (movie.description) { %>
+                      <%= movie.description.length > 200
+                            ? movie.description.slice(0, 200) + "…"
+                            : movie.description %>
+                    <% } else { %>
+                      <span class="text-muted">
+                        Aucune description disponible.
+                      </span>
+                    <% } %>
+                  </p>
+
+                  <div class="d-flex flex-wrap gap-2 mt-3">
+                    <a
+                      href="/films-ejs/<%= movie.id %>"
+                      class="btn btn-outline-primary btn-sm"
+                    >
+                      Détails
+                    </a>
+                    <a
+                      href="/films-ejs/<%= movie.id %>/showtimes"
+                      class="btn btn-primary btn-sm"
+                    >
+                      Voir les séances
+                    </a>
+
+                    <!-- Bouton admin : visible seulement pour ino1 (géré par JS via .js-admin-only) -->
+                    <a
+                      href="/admin/movies/<%= movie.id %>/edit"
+                      class="btn btn-outline-secondary btn-sm js-admin-only d-none"
+                    >
+                      Modifier
+                    </a>
+                  </div>
                 </div>
               </div>
             </div>
@@ -75,7 +105,7 @@
               <a
                 class="page-link"
                 href="/films-ejs?page=<%= page - 1 %>"
-                tabindex="-1"
+                tabindex="<%= page <= 1 ? '-1' : '0' %>"
               >
                 Précédent
               </a>
@@ -95,6 +125,7 @@
               <a
                 class="page-link"
                 href="/films-ejs?page=<%= page + 1 %>"
+                tabindex="<%= page >= totalPages ? '-1' : '0' %>"
               >
                 Suivant
               </a>
@@ -106,4 +137,4 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
   </body>
-</html> 
+</html>
