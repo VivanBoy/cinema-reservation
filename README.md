@@ -1,4 +1,30 @@
-# 🎬 Cinéma – Réservation
+# 🎬 Cinema Reservation — Web App (Node.js / Express / MySQL / EJS)
+
+A f:contentReference[oaicite:5]{index=5} **cinema ticket booking** built with a REST API + server-rendered pages (EJS).
+Includes **JWT authentication**, **roles (client/admin)**, and management of movies/showtimes/bookings.
+
+**Tech:** Node.js, Express, MySQL, Sequelize, EJS, Bootstrap, JWT
+
+## ⭐ Highlights
+- Register / Login with **JWT**
+- Roles: **client** and **admin**
+- CRUD: movies, rooms, showtimes
+- Bookings: create, view, cancel
+- UI: **EJS + Bootstrap**, dynamic navbar
+
+## 📌 My Contribution (Innocent Niyobuhungiro)
+- Implemented pagination on `/films-ejs?page=...`
+- Built “My Bookings” page: list + cancel booking (`DELETE /api/bookings/:id`)
+- Improved EJS navbar using `localStorage` (`cinemaUser`) + conditional admin display
+- Cleaned/added admin views (new/edit movie & showtime)
+- Updated booking routes/API behavior to support EJS flows securely
+
+---
+
+# 🎬 Cinéma – Réservation (FR)
+
+Application web complète de **réservation de billets de cinéma** (API REST + pages EJS).
+Auth **JWT**, rôles **client/admin**, gestion des films/salles/séances et réservations.
 
 Application web complète de **réservation de billets de cinéma** développée dans le cadre du cours  
 *Introduction à la programmation de serveurs Web (Node.js / Express / MySQL / EJS)*.
