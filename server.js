@@ -6,7 +6,7 @@ import dotenv from "dotenv";
 import path from "path";
 import { fileURLToPath } from "url";
 
-import { connectDB } from "./config/connection.js";
+import sequelize, { connectDB } from "./config/connection.js";
 import "./models/index.js";
 import { Movie, Room, Showtime, Booking, User } from "./models/index.js";
 
@@ -464,9 +464,23 @@ app.use("/api/showtimes", showtimeRoutes);
 app.use("/api/bookings", bookingRoutes);
 
 // ========== LANCEMENT SERVEUR ==========
-connectDB();
-
 const PORT = process.env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+
+async function start() {
+  try {
+    await connectDB();
+
+    // crée/ajuste les tables automatiquement
+    await sequelize.sync({ alter: true });
+    console.log("✅ DB sync done (tables créées/ajustées)");
+
+    app.listen(PORT, () => {
+      console.log(`✅ Server running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ Startup error:", err);
+    process.exit(1);
+  }
+}
+
+start();
